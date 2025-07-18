@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback Form</title>
+</head>
+<body>
+    <h1>Feedback Form</h1>
+    <h2>Hello, <%= customerName %>!</h2>
+    <p>We value your feedback. Please share your thoughts and optionally upload an image.</p>
+    
+    <form action="/feedback/<%= feedbackId %>" method="POST" enctype="multipart/form-data">
+        <div>
+            <label for="feedback_text">Your Feedback:</label>
+            <br>
+            <textarea id="feedback_text" name="feedback_text" rows="6" cols="50" placeholder="Please share your feedback here..."></textarea>
+        </div>
+        
+        <br>
+        
+        <div>
+            <label for="image">Upload Image (optional):</label>
+            <br>
+            <input type="file" id="image" name="image" accept="image/*">
+        </div>
+        
+        <br>
+        
+        <button type="submit">Submit Feedback</button>
+    </form>
+    
+    <script>
+        // Simple form validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const feedbackText = document.getElementById('feedback_text').value.trim();
+            const imageFile = document.getElementById('image').files[0];
+            
+            if (!feedbackText && !imageFile) {
+                e.preventDefault();
+                alert('Please provide either feedback text or upload an image.');
+                return false;
+            }
+        });
+    </script>
+</body>
+</html>
