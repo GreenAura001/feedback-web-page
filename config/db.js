@@ -1,17 +1,50 @@
-const mysql = require('mysql2/promise');
+const { MongoClient } = require('mongodb');
 
-const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_DATABASE,
-  port: process.env.DB_PORT || 3306,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-  acquireTimeout: 60000,
-  timeout: 60000,
-  reconnect: true
+// Create MongoDB connection
+const client = new MongoClient(process.env.MONGODB_URL, {
+  maxPoolSize: 10,
+  serverSelectionTimeoutMS: 60000,
+  socketTimeoutMS: 60000,
+  connectTimeoutMS: 60000,
+  maxIdleTimeMS: 30000,
+  retryWrites: true,
+  retryReads: true
 });
 
-module.exports = pool;
+// Database and collection references
+const database = client.db('greenaura_feedback');
+const feedbackCollection = database.collection('feedback_submissions');
+
+// Connection function
+async function connectToMongoDB() {
+  try {
+    await client.connect();
+    console.log('Connected to MongoDB');
+    
+    // Create index on feedback_link_id for better query performance
+    await feedbackCollection.createIndex({ feedback_link_id: 1 });
+    
+    // Create index on submitted_at for time-based queries
+    await feedbackCollection.createIndex({ submitted_at: 1 });
+    
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    process.exit(1);
+  }
+}
+
+// Graceful shutdown
+process.on('SIGINT', async () => {
+  console.log('Closing MongoDB connection...');
+  await client.close();
+  process.exit(0);
+});
+
+// Initialize connection
+connectToMongoDB();
+
+module.exports = {
+  client,
+  database,
+  feedbackCollection
+};
