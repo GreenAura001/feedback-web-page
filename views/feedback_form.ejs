@@ -3,42 +3,676 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Feedback Form</title>
+    <title>Green Aura - Feedback Form</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="leaves" patternUnits="userSpaceOnUse" width="20" height="20"><path d="M10 0C15 5 15 15 10 20C5 15 5 5 10 0Z" fill="%23ffffff" fill-opacity="0.05"/></pattern></defs><rect width="100" height="100" fill="url(%23leaves)"/></svg>');
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateX(-50%) translateY(-50%) rotate(0deg); }
+            100% { transform: translateX(-50%) translateY(-50%) rotate(360deg); }
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header h2 {
+            font-size: 1.3em;
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            margin-top: 15px;
+            font-size: 1.1em;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .form-content {
+            padding: 30px;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #2ecc71;
+            transition: all 0.3s ease;
+        }
+
+        .form-section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-section legend {
+            background: #2ecc71;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .radio-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .radio-item:hover {
+            background: #e8f5e8;
+            border-color: #2ecc71;
+        }
+
+        .radio-item input[type="radio"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            accent-color: #2ecc71;
+        }
+
+        .radio-item label {
+            cursor: pointer;
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .radio-item.selected {
+            background: #e8f5e8;
+            border-color: #2ecc71;
+        }
+
+        .star-rating {
+            display: flex;
+            gap: 5px;
+            margin-top: 15px;
+        }
+
+        .star {
+            font-size: 2em;
+            color: #ddd;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .star:hover,
+        .star.active {
+            color: #ffd700;
+            transform: scale(1.1);
+        }
+
+        .star:hover ~ .star {
+            color: #ddd;
+        }
+
+        .textarea-field {
+            margin-bottom: 20px;
+        }
+
+        .textarea-field label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .textarea-field textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 1em;
+            resize: vertical;
+            min-height: 100px;
+            transition: border-color 0.3s ease;
+        }
+
+        .textarea-field textarea:focus {
+            outline: none;
+            border-color: #2ecc71;
+        }
+
+        .input-field {
+            margin-top: 10px;
+        }
+
+        .input-field input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-field input[type="text"]:focus {
+            outline: none;
+            border-color: #2ecc71;
+        }
+
+        .file-upload {
+            margin-top: 20px;
+        }
+
+        .file-upload label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .file-upload input[type="file"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px dashed #2ecc71;
+            border-radius: 10px;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload input[type="file"]:hover {
+            background: #e8f5e8;
+            border-color: #27ae60;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 30px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(46, 204, 113, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .rating-display {
+            margin-top: 10px;
+            font-size: 1.1em;
+            color: #2ecc71;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+
+            .header {
+                padding: 30px 20px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .form-content {
+                padding: 20px;
+            }
+
+            .form-section {
+                padding: 20px;
+            }
+
+            .radio-group {
+                gap: 10px;
+            }
+
+            .star {
+                font-size: 1.5em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .header h2 {
+                font-size: 1.1em;
+            }
+
+            .form-section {
+                padding: 15px;
+            }
+
+            .star {
+                font-size: 1.3em;
+            }
+
+            .submit-btn {
+                padding: 15px;
+                font-size: 1.1em;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>Feedback Form</h1>
-    <h2>Hello, <%= customerName %>!</h2>
-    <p>We value your feedback. Please share your thoughts and optionally upload an image.</p>
-    
-    <form action="/feedback/<%= feedbackId %>" method="POST" enctype="multipart/form-data">
-        <div>
-            <label for="feedback_text">Your Feedback:</label>
-            <br>
-            <textarea id="feedback_text" name="feedback_text" rows="6" cols="50" placeholder="Please share your feedback here..."></textarea>
+    <div class="container">
+        <div class="header">
+            <h1>🌱 Green Aura</h1>
+            <h2>Hello, <%= customerName %>!</h2>
+            <p>We value your feedback and would love to hear about your experience with our gardening/landscaping services.</p>
         </div>
-        
-        <br>
-        
-        <div>
-            <label for="image">Upload Image (optional):</label>
-            <br>
-            <input type="file" id="image" name="image" accept="image/*">
+
+        <div class="form-content">
+            <form action="/feedback/<%= feedbackId %>" method="POST" enctype="multipart/form-data" id="feedbackForm">
+                
+                <!-- Overall Satisfaction -->
+                <fieldset class="form-section">
+                    <legend>How satisfied are you with our services?</legend>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" id="very_satisfied" name="satisfaction" value="Very Satisfied" required>
+                            <label for="very_satisfied">Very Satisfied</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="satisfied" name="satisfaction" value="Satisfied">
+                            <label for="satisfied">Satisfied</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="neutral" name="satisfaction" value="Neutral">
+                            <label for="neutral">Neutral</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="dissatisfied" name="satisfaction" value="Dissatisfied">
+                            <label for="dissatisfied">Dissatisfied</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="very_dissatisfied" name="satisfaction" value="Very Dissatisfied">
+                            <label for="very_dissatisfied">Very Dissatisfied</label>
+                        </div>
+                    </div>
+                </fieldset>
+                
+                <!-- Service Type -->
+                <fieldset class="form-section">
+                    <legend>What type of service did you receive?</legend>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" id="gardening" name="service_type" value="Gardening" required>
+                            <label for="gardening">Gardening</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="landscaping" name="service_type" value="Landscaping">
+                            <label for="landscaping">Landscaping</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="lawn_maintenance" name="service_type" value="Lawn Maintenance">
+                            <label for="lawn_maintenance">Lawn Maintenance</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="plant_care" name="service_type" value="Plant Care">
+                            <label for="plant_care">Plant Care</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="others" name="service_type" value="Others">
+                            <label for="others">Others</label>
+                        </div>
+                    </div>
+                    <div class="input-field hidden" id="service_other_field">
+                        <input type="text" name="service_type_other" placeholder="Please specify the service type">
+                    </div>
+                </fieldset>
+                
+                <!-- Punctuality -->
+                <fieldset class="form-section">
+                    <legend>Was the team punctual and professional?</legend>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" id="punctual_yes" name="punctuality" value="Yes" required>
+                            <label for="punctual_yes">Yes</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="punctual_no" name="punctuality" value="No">
+                            <label for="punctual_no">No</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="punctual_somewhat" name="punctuality" value="Somewhat">
+                            <label for="punctual_somewhat">Somewhat</label>
+                        </div>
+                    </div>
+                </fieldset>
+                
+                <!-- Communication -->
+                <fieldset class="form-section">
+                    <legend>Did the team communicate clearly?</legend>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" id="comm_yes" name="communication" value="Yes" required>
+                            <label for="comm_yes">Yes</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="comm_no" name="communication" value="No">
+                            <label for="comm_no">No</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="comm_not_sure" name="communication" value="Not Sure">
+                            <label for="comm_not_sure">Not Sure</label>
+                        </div>
+                    </div>
+                </fieldset>
+                
+                <!-- Quality Rating -->
+                <fieldset class="form-section">
+                    <legend>Rate the quality of our work</legend>
+                    <div class="star-rating" id="starRating">
+                        <span class="star" data-rating="1">★</span>
+                        <span class="star" data-rating="2">★</span>
+                        <span class="star" data-rating="3">★</span>
+                        <span class="star" data-rating="4">★</span>
+                        <span class="star" data-rating="5">★</span>
+                    </div>
+                    <div class="rating-display" id="ratingDisplay">Click stars to rate</div>
+                    <input type="hidden" name="quality_rating" id="qualityRating" required>
+                </fieldset>
+                
+                <!-- Cleanliness -->
+                <fieldset class="form-section">
+                    <legend>Was your space left clean and tidy?</legend>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" id="clean_yes" name="cleanliness" value="Yes" required>
+                            <label for="clean_yes">Yes</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="clean_no" name="cleanliness" value="No">
+                            <label for="clean_no">No</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="clean_na" name="cleanliness" value="Not Applicable">
+                            <label for="clean_na">Not Applicable</label>
+                        </div>
+                    </div>
+                </fieldset>
+                
+                <!-- Expectations -->
+                <fieldset class="form-section">
+                    <legend>Did Green Aura meet your expectations?</legend>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" id="expect_fully" name="expectations" value="Fully" required>
+                            <label for="expect_fully">Fully</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="expect_partially" name="expectations" value="Partially">
+                            <label for="expect_partially">Partially</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="expect_not_at_all" name="expectations" value="Not at all">
+                            <label for="expect_not_at_all">Not at all</label>
+                        </div>
+                    </div>
+                </fieldset>
+                
+                <!-- Suggestions & Comments -->
+                <fieldset class="form-section">
+                    <legend>💬 Your Feedback</legend>
+                    
+                    <div class="textarea-field">
+                        <label for="liked_most">What did you like most about our service?</label>
+                        <textarea id="liked_most" name="liked_most" placeholder="Tell us what you enjoyed..."></textarea>
+                    </div>
+                    
+                    <div class="textarea-field">
+                        <label for="improvements">What could we improve?</label>
+                        <textarea id="improvements" name="improvements" placeholder="Your suggestions for improvement..."></textarea>
+                    </div>
+                    
+                    <div class="radio-group">
+                        <strong style="margin-bottom: 15px; display: block;">Would you recommend Green Aura to others?</strong>
+                        <div class="radio-item">
+                            <input type="radio" id="recommend_yes" name="recommend" value="Yes" required>
+                            <label for="recommend_yes">Yes</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="recommend_no" name="recommend" value="No">
+                            <label for="recommend_no">No</label>
+                        </div>
+                    </div>
+                    
+                    <div class="input-field hidden" id="recommend_reason_field">
+                        <input type="text" id="recommend_reason" name="recommend_reason" placeholder="Please tell us why you wouldn't recommend us...">
+                    </div>
+                </fieldset>
+                
+                <!-- Future Services -->
+                <fieldset class="form-section">
+                    <legend>🌱 Future Services</legend>
+                    
+                    <div class="radio-group">
+                        <strong style="margin-bottom: 15px; display: block;">Interested in regular maintenance?</strong>
+                        <div class="radio-item">
+                            <input type="radio" id="maintenance_weekly" name="maintenance_interest" value="Weekly" required>
+                            <label for="maintenance_weekly">Weekly</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="maintenance_monthly" name="maintenance_interest" value="Monthly">
+                            <label for="maintenance_monthly">Monthly</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="maintenance_on_demand" name="maintenance_interest" value="On Demand">
+                            <label for="maintenance_on_demand">On Demand</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="maintenance_no" name="maintenance_interest" value="No">
+                            <label for="maintenance_no">No</label>
+                        </div>
+                    </div>
+                    
+                    <div class="radio-group" style="margin-top: 25px;">
+                        <strong style="margin-bottom: 15px; display: block;">Receive seasonal tips and offers?</strong>
+                        <div class="radio-item">
+                            <input type="radio" id="tips_yes" name="tips_offers" value="Yes" required>
+                            <label for="tips_yes">Yes</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="tips_no" name="tips_offers" value="No">
+                            <label for="tips_no">No</label>
+                        </div>
+                    </div>
+                </fieldset>
+                
+                <!-- Image Upload -->
+                <fieldset class="form-section">
+                    <legend>📸 Share a Photo (Optional)</legend>
+                    <div class="file-upload">
+                        <label for="image">Upload an image of our work or your space:</label>
+                        <input type="file" id="image" name="image" accept="image/*">
+                        <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                            <small>You can upload a photo showing our work or any area you'd like us to focus on in the future.</small>
+                        </p>
+                    </div>
+                </fieldset>
+                
+                <button type="submit" class="submit-btn">Submit Feedback</button>
+            </form>
         </div>
-        
-        <br>
-        
-        <button type="submit">Submit Feedback</button>
-    </form>
+    </div>
     
     <script>
-        // Simple form validation
-        document.querySelector('form').addEventListener('submit', function(e) {
-            const feedbackText = document.getElementById('feedback_text').value.trim();
-            const imageFile = document.getElementById('image').files[0];
+        // Radio button selection styling
+        document.querySelectorAll('input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                // Remove selected class from all radio items in the same group
+                document.querySelectorAll(`input[name="${this.name}"]`).forEach(r => {
+                    r.closest('.radio-item').classList.remove('selected');
+                });
+                // Add selected class to current item
+                this.closest('.radio-item').classList.add('selected');
+            });
+        });
+
+        // Star rating functionality
+        const stars = document.querySelectorAll('.star');
+        const ratingDisplay = document.getElementById('ratingDisplay');
+        const qualityRating = document.getElementById('qualityRating');
+        const ratingTexts = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+
+        stars.forEach((star, index) => {
+            star.addEventListener('click', function() {
+                const rating = this.dataset.rating;
+                qualityRating.value = rating;
+                
+                // Update star display
+                stars.forEach((s, i) => {
+                    if (i < rating) {
+                        s.classList.add('active');
+                    } else {
+                        s.classList.remove('active');
+                    }
+                });
+                
+                // Update rating display
+                ratingDisplay.textContent = `${rating} star${rating > 1 ? 's' : ''} - ${ratingTexts[rating]}`;
+            });
+
+            star.addEventListener('mouseenter', function() {
+                const rating = this.dataset.rating;
+                stars.forEach((s, i) => {
+                    if (i < rating) {
+                        s.style.color = '#ffd700';
+                    } else {
+                        s.style.color = '#ddd';
+                    }
+                });
+            });
+        });
+
+        document.getElementById('starRating').addEventListener('mouseleave', function() {
+            const currentRating = qualityRating.value;
+            stars.forEach((s, i) => {
+                if (i < currentRating) {
+                    s.style.color = '#ffd700';
+                } else {
+                    s.style.color = '#ddd';
+                }
+            });
+        });
+
+        // Show/hide service type other field
+        document.getElementById('others').addEventListener('change', function() {
+            document.getElementById('service_other_field').classList.toggle('hidden', !this.checked);
+        });
+
+        document.querySelectorAll('input[name="service_type"]:not(#others)').forEach(radio => {
+            radio.addEventListener('change', function() {
+                document.getElementById('service_other_field').classList.add('hidden');
+            });
+        });
+
+        // Show/hide recommendation reason field
+        document.querySelectorAll('input[name="recommend"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const reasonField = document.getElementById('recommend_reason_field');
+                if (this.value === 'No') {
+                    reasonField.classList.remove('hidden');
+                    document.getElementById('recommend_reason').required = true;
+                } else {
+                    reasonField.classList.add('hidden');
+                    document.getElementById('recommend_reason').required = false;
+                    document.getElementById('recommend_reason').value = '';
+                }
+            });
+        });
+
+        // Form validation
+        document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+            const satisfaction = document.querySelector('input[name="satisfaction"]:checked');
+            const qualityRating = document.getElementById('qualityRating').value;
             
-            if (!feedbackText && !imageFile) {
+            if (!satisfaction) {
                 e.preventDefault();
-                alert('Please provide either feedback text or upload an image.');
+                alert('Please answer the satisfaction question to submit your feedback.');
+                return false;
+            }
+            
+            if (!qualityRating) {
+                e.preventDefault();
+                alert('Please provide a quality rating by clicking on the stars.');
                 return false;
             }
         });
