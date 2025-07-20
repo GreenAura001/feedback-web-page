@@ -52,17 +52,19 @@ class FeedbackController {
     }
   }
 
-  // Submit feedback
+  // Submit feedback - FIXED VERSION
   async submitFeedback(req, res) {
     try {
       const { id } = req.params;
-      const { feedback_text } = req.body;
       const file = req.file;
 
+      console.log('=== SUBMIT FEEDBACK DEBUG ===');
       console.log('Submitting feedback for ID:', id);
-      console.log('Feedback text:', feedback_text);
+      console.log('Form data received:', req.body);
+      console.log('File uploaded:', !!file);
 
       if (!id) {
+        console.log('ERROR: No ID provided');
         return res.status(400).send('Invalid feedback link');
       }
 
@@ -80,14 +82,22 @@ class FeedbackController {
       }
 
       if (!feedbackLink) {
-        console.log('No feedback link found during submission for ID:', id);
+        console.log('ERROR: No feedback link found during submission for ID:', id);
+        
+        // Let's see what's actually in the database
+        const allLinks = await feedbackLinksCollection.find({}).toArray();
+        console.log('All links in database during submission:', allLinks);
+        
         return res.status(404).send('Feedback link not found or expired');
       }
+
+      console.log('SUCCESS: Found feedback link during submission');
 
       let imageUrl = null;
 
       // Upload image to Cloudinary if provided
       if (file) {
+        console.log('Uploading image to Cloudinary...');
         try {
           const result = await new Promise((resolve, reject) => {
             cloudinary.uploader.upload_stream(
@@ -103,6 +113,7 @@ class FeedbackController {
           });
           
           imageUrl = result.secure_url;
+          console.log('Image uploaded successfully:', imageUrl);
         } catch (uploadError) {
           console.error('Cloudinary upload error:', uploadError);
           return res.status(500).send('Image upload failed');
@@ -117,45 +128,78 @@ class FeedbackController {
                       req.headers['x-forwarded-for']?.split(',')[0] ||
                       'unknown';
 
-      // Prepare submission data
-      const submissionData = {
-        feedback_text: feedback_text || '',
+      // Collect all form data into a structured object
+      const feedbackData = {
+        satisfaction: req.body.satisfaction,
+        service_type: req.body.service_type,
+        service_type_other: req.body.service_type_other || null,
+        punctuality: req.body.punctuality,
+        communication: req.body.communication,
+        quality_rating: req.body.quality_rating,
+        cleanliness: req.body.cleanliness,
+        expectations: req.body.expectations,
+        liked_most: req.body.liked_most || '',
+        improvements: req.body.improvements || '',
+        recommend: req.body.recommend,
+        recommend_reason: req.body.recommend_reason || null,
+        maintenance_interest: req.body.maintenance_interest,
+        tips_offers: req.body.tips_offers,
         image_url: imageUrl,
-        ip_address: clientIp,
-        submitted_at: new Date().toISOString(),
-        user_agent: req.get('User-Agent') || 'unknown',
-        customer_name: feedbackLink.customer_name
+        metadata: {
+          ip_address: clientIp,
+          user_agent: req.get('User-Agent') || 'unknown',
+          submitted_at: new Date().toISOString(),
+          customer_name: feedbackLink.customer_name
+        }
       };
 
-      // Insert submission into database
+      console.log('Structured feedback data:', JSON.stringify(feedbackData, null, 2));
+
+      // Insert submission into MongoDB database
       const submissionId = uuidv4();
       const submissionDocument = {
         _id: submissionId,
         feedback_link_id: id,
-        data: submissionData,
+        feedback_text: JSON.stringify(feedbackData), // Store as JSON string in feedback_text field
         submitted_at: new Date()
       };
 
-      await feedbackSubmissionsCollection.insertOne(submissionDocument);
-      console.log('Successfully inserted feedback submission:', submissionId);
-
-      // Delete the feedback link after successful submission
-      console.log('Attempting to delete feedback link...');
-      const deleteResult = await feedbackLinksCollection.deleteOne({ _id: id });
-      console.log('Delete result:', deleteResult);
+      console.log('Inserting submission document...');
+      console.log('Full submission document to insert:', JSON.stringify(submissionDocument, null, 2));
       
-      // If deletion by _id failed, try by id field
-      if (deleteResult.deletedCount === 0) {
-        const deleteResult2 = await feedbackLinksCollection.deleteOne({ id: id });
-        console.log('Delete by id field result:', deleteResult2);
+      try {
+        const insertResult = await feedbackSubmissionsCollection.insertOne(submissionDocument);
+        console.log('Insert operation result:', insertResult);
+        console.log('Successfully inserted feedback submission with ID:', submissionId);
+        
+        // Verify the insertion by immediately querying for it
+        const verifyInsert = await feedbackSubmissionsCollection.findOne({ _id: submissionId });
+        console.log('Verification - found inserted document:', verifyInsert);
+        
+        // Also check total count in collection
+        const totalCount = await feedbackSubmissionsCollection.countDocuments();
+        console.log('Total documents in feedback_submissions collection:', totalCount);
+        
+      } catch (insertError) {
+        console.error('Error during database insertion:', insertError);
+        console.error('Insert error stack:', insertError.stack);
+        return res.status(500).send('Database error during feedback submission');
       }
 
+      // NOTE: NOT DELETING THE LINK FOR DEBUGGING PURPOSES
+      console.log('DEBUG MODE: Not deleting feedback link to allow repeated testing');
+
       console.log('Rendering success page for customer:', feedbackLink.customer_name);
+      
       res.render('success', { 
         customerName: feedbackLink.customer_name 
       });
+      
+      console.log('=== SUBMIT FEEDBACK COMPLETED ===');
+      
     } catch (error) {
       console.error('Error submitting feedback:', error);
+      console.error('Full error stack:', error.stack);
       res.status(500).send('Server error');
     }
   }
@@ -190,6 +234,48 @@ class FeedbackController {
     } catch (error) {
       console.error('Error validating feedback link:', error);
       res.status(500).send('Server error');
+    }
+  }
+
+  // Helper method to retrieve feedback submissions with parsed JSON data
+  async getFeedbackSubmissionsByLinkId(feedbackLinkId) {
+    try {
+      const submissions = await feedbackSubmissionsCollection
+        .find({ feedback_link_id: feedbackLinkId })
+        .sort({ submitted_at: -1 })
+        .toArray();
+      
+      // Parse the JSON feedback_text for each submission
+      const parsedSubmissions = submissions.map(submission => ({
+        ...submission,
+        feedback_data: JSON.parse(submission.feedback_text)
+      }));
+      
+      return parsedSubmissions;
+    } catch (error) {
+      console.error('Error fetching feedback submissions:', error);
+      throw error;
+    }
+  }
+
+  // Helper method to retrieve all feedback submissions with parsed JSON data
+  async getAllFeedbackSubmissions() {
+    try {
+      const submissions = await feedbackSubmissionsCollection
+        .find({})
+        .sort({ submitted_at: -1 })
+        .toArray();
+      
+      // Parse the JSON feedback_text for each submission
+      const parsedSubmissions = submissions.map(submission => ({
+        ...submission,
+        feedback_data: JSON.parse(submission.feedback_text)
+      }));
+      
+      return parsedSubmissions;
+    } catch (error) {
+      console.error('Error fetching all feedback submissions:', error);
+      throw error;
     }
   }
 }
