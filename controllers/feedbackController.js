@@ -1,6 +1,10 @@
 const { v4: uuidv4 } = require('uuid');
-const pool = require('../config/db');
+const { database } = require('../config/db'); // Your MongoDB connection
 const cloudinary = require('../utils/cloudinary');
+
+// Get collections
+const feedbackLinksCollection = database.collection('feedback_links');
+const feedbackSubmissionsCollection = database.collection('feedback_submissions');
 
 class FeedbackController {
   // Get feedback form
@@ -8,21 +12,35 @@ class FeedbackController {
     try {
       const { id } = req.params;
       
+      console.log('Received feedback link ID:', id);
+      
       if (!id) {
         return res.status(400).send('Invalid feedback link');
       }
 
-      // Check if feedback link exists
-      const [rows] = await pool.execute(
-        'SELECT id, customer_name FROM feedback_links WHERE id = ?',
-        [id]
-      );
-
-      if (rows.length === 0) {
-        return res.status(404).send('Feedback link not found or expired');
+      // Check if feedback link exists - try different query approaches
+      console.log('Searching for feedback link...');
+      
+      // First, let's see what's in the collection
+      const allLinks = await feedbackLinksCollection.find({}).limit(5).toArray();
+      console.log('Sample feedback links in collection:', allLinks);
+      
+      // Try finding by _id as string
+      let feedbackLink = await feedbackLinksCollection.findOne({ _id: id });
+      console.log('Found by _id (string):', feedbackLink);
+      
+      // If not found, try finding by id field (in case you're using 'id' instead of '_id')
+      if (!feedbackLink) {
+        feedbackLink = await feedbackLinksCollection.findOne({ id: id });
+        console.log('Found by id field:', feedbackLink);
       }
 
-      const feedbackLink = rows[0];
+      if (!feedbackLink) {
+        console.log('No feedback link found for ID:', id);
+        return res.status(404).send('Feedback link not found or expired');
+      }
+      
+      console.log('Successfully found feedback link:', feedbackLink);
       
       res.render('feedback_form', { 
         feedbackId: id,
@@ -41,17 +59,28 @@ class FeedbackController {
       const { feedback_text } = req.body;
       const file = req.file;
 
+      console.log('Submitting feedback for ID:', id);
+      console.log('Feedback text:', feedback_text);
+
       if (!id) {
         return res.status(400).send('Invalid feedback link');
       }
 
-      // Check if feedback link exists
-      const [linkRows] = await pool.execute(
-        'SELECT id, customer_name FROM feedback_links WHERE id = ?',
-        [id]
-      );
+      // Check if feedback link exists - try different query approaches
+      console.log('Searching for feedback link during submission...');
+      
+      // Try finding by _id as string
+      let feedbackLink = await feedbackLinksCollection.findOne({ _id: id });
+      console.log('Found by _id (string) during submission:', feedbackLink);
+      
+      // If not found, try finding by id field
+      if (!feedbackLink) {
+        feedbackLink = await feedbackLinksCollection.findOne({ id: id });
+        console.log('Found by id field during submission:', feedbackLink);
+      }
 
-      if (linkRows.length === 0) {
+      if (!feedbackLink) {
+        console.log('No feedback link found during submission for ID:', id);
         return res.status(404).send('Feedback link not found or expired');
       }
 
@@ -95,24 +124,35 @@ class FeedbackController {
         ip_address: clientIp,
         submitted_at: new Date().toISOString(),
         user_agent: req.get('User-Agent') || 'unknown',
-        customer_name: linkRows[0].customer_name
+        customer_name: feedbackLink.customer_name
       };
 
       // Insert submission into database
       const submissionId = uuidv4();
-      await pool.execute(
-        'INSERT INTO feedback_submissions (id, feedback_link_id, data, submitted_at) VALUES (?, ?, ?, NOW())',
-        [submissionId, id, JSON.stringify(submissionData)]
-      );
+      const submissionDocument = {
+        _id: submissionId,
+        feedback_link_id: id,
+        data: submissionData,
+        submitted_at: new Date()
+      };
+
+      await feedbackSubmissionsCollection.insertOne(submissionDocument);
+      console.log('Successfully inserted feedback submission:', submissionId);
 
       // Delete the feedback link after successful submission
-      await pool.execute(
-        'DELETE FROM feedback_links WHERE id = ?',
-        [id]
-      );
+      console.log('Attempting to delete feedback link...');
+      const deleteResult = await feedbackLinksCollection.deleteOne({ _id: id });
+      console.log('Delete result:', deleteResult);
+      
+      // If deletion by _id failed, try by id field
+      if (deleteResult.deletedCount === 0) {
+        const deleteResult2 = await feedbackLinksCollection.deleteOne({ id: id });
+        console.log('Delete by id field result:', deleteResult2);
+      }
 
+      console.log('Rendering success page for customer:', feedbackLink.customer_name);
       res.render('success', { 
-        customerName: linkRows[0].customer_name 
+        customerName: feedbackLink.customer_name 
       });
     } catch (error) {
       console.error('Error submitting feedback:', error);
@@ -125,16 +165,24 @@ class FeedbackController {
     try {
       const { id } = req.params;
       
+      console.log('Validating feedback link ID:', id);
+      
       if (!id) {
         return res.status(400).send('Invalid feedback link');
       }
 
-      const [rows] = await pool.execute(
-        'SELECT id FROM feedback_links WHERE id = ?',
-        [id]
-      );
+      // Try finding by _id as string
+      let feedbackLink = await feedbackLinksCollection.findOne({ _id: id });
+      console.log('Found by _id (string) in validation:', feedbackLink);
+      
+      // If not found, try finding by id field
+      if (!feedbackLink) {
+        feedbackLink = await feedbackLinksCollection.findOne({ id: id });
+        console.log('Found by id field in validation:', feedbackLink);
+      }
 
-      if (rows.length === 0) {
+      if (!feedbackLink) {
+        console.log('No feedback link found during validation for ID:', id);
         return res.status(404).send('Feedback link not found or expired');
       }
 
