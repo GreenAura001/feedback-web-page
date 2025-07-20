@@ -25,9 +25,9 @@ const upload = multer({
 router.get('/feedback/:id', feedbackController.getFeedbackForm);
 router.post('/feedback/:id', upload.single('image'), feedbackController.submitFeedback);
 
-// Root route
+// Root route - redirect to greenaura.org.in
 router.get('/', (req, res) => {
-  res.send('Feedback System API - Use /feedback/:id to access feedback forms');
+  res.redirect('https://greenaura.org.in/');
 });
 
 module.exports = router;
