@@ -52,7 +52,7 @@ class FeedbackController {
     }
   }
 
-  // Submit feedback - FIXED VERSION
+  // Submit feedback - FIXED VERSION WITH LINK DELETION
   async submitFeedback(req, res) {
     try {
       const { id } = req.params;
@@ -186,8 +186,47 @@ class FeedbackController {
         return res.status(500).send('Database error during feedback submission');
       }
 
-      // NOTE: NOT DELETING THE LINK FOR DEBUGGING PURPOSES
-      console.log('DEBUG MODE: Not deleting feedback link to allow repeated testing');
+      // DELETE THE FEEDBACK LINK AFTER SUCCESSFUL SUBMISSION
+      try {
+        console.log('Deleting feedback link to prevent reuse...');
+        
+        // Try deleting by _id first
+        const deleteResult = await feedbackLinksCollection.deleteOne({ _id: id });
+        console.log('Delete by _id result:', deleteResult);
+        
+        if (deleteResult.deletedCount === 0) {
+          // If deletion by _id failed, try by id field
+          console.log('Deletion by _id failed, trying by id field...');
+          const deleteByIdResult = await feedbackLinksCollection.deleteOne({ id: id });
+          console.log('Delete by id field result:', deleteByIdResult);
+          
+          if (deleteByIdResult.deletedCount > 0) {
+            console.log('Successfully deleted feedback link by id field:', id);
+          } else {
+            console.log('WARNING: Could not delete feedback link by either _id or id field');
+          }
+        } else {
+          console.log('Successfully deleted feedback link by _id:', id);
+        }
+        
+        // Verify deletion
+        const verifyDeletion = await feedbackLinksCollection.findOne({ _id: id });
+        const verifyDeletionById = await feedbackLinksCollection.findOne({ id: id });
+        
+        if (!verifyDeletion && !verifyDeletionById) {
+          console.log('✓ Feedback link successfully removed from database');
+        } else {
+          console.log('WARNING: Feedback link still exists after deletion attempt');
+          console.log('Still found by _id:', !!verifyDeletion);
+          console.log('Still found by id:', !!verifyDeletionById);
+        }
+        
+      } catch (deleteError) {
+        console.error('Error deleting feedback link:', deleteError);
+        console.error('Delete error stack:', deleteError.stack);
+        // Don't return error here - feedback was submitted successfully
+        // Just log the deletion failure
+      }
 
       console.log('Rendering success page for customer:', feedbackLink.customer_name);
       
